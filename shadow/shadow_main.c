@@ -10,29 +10,50 @@
 #define S_LOG(fmt, ...) \
     printk("[%s][%d]" fmt "\n", __func__, __LINE__, ##__VA_ARGS__)
 
+void dump_data(u8 *ptr, int len)
+{
+    int i;
+
+    for (i = 0; i < len; i++) {
+        if (!(i%16))
+            printk("\n %04x", i);
+        printk(" %02x", ptr[i]);
+    }
+    printk("\n");
+}
+
 struct shadow_dev_pri {
     int id; 
 };
 
 int shadow_netdev_open(struct net_device *dev)
 {
+    S_LOG("-");
+
     return 0;
 }
 
 int  shadow_netdev_stop(struct net_device *dev)
 {
+    S_LOG("-");
+
     return 0;
 }
 
 netdev_tx_t shadow_netdev_start_xmit(struct sk_buff *skb,
                            struct net_device *dev)
 {
+    S_LOG("-");
+    dump_data(skb->data, skb->len);
+
     return NETDEV_TX_OK;
 }
 
 int shadow_netdev_ioctl(struct net_device *dev,
                             struct ifreq *ifr, int cmd)
 {
+    S_LOG("-");
+
     return 0;
 }
 
@@ -55,6 +76,10 @@ static struct net_device_ops g_shadow_netdev_ops = {
 };
 
 static struct net_device *g_shadow_ndev = NULL;
+
+//TODO:mac should config by use or generate by a someway
+static char g_shadow_ndev_mac[6] = {0x00, 0x0c, 0x29, 0xde, 0xad, 0x50};
+
 int shadow_netdev_init(void)
 {
     int ret;
@@ -67,6 +92,8 @@ int shadow_netdev_init(void)
 
     g_shadow_ndev->netdev_ops = &g_shadow_netdev_ops;
     g_shadow_ndev->ethtool_ops = &shadow_ethtool_ops,
+
+    memcpy(g_shadow_ndev->dev_addr, g_shadow_ndev_mac, 6);
 
     ret = register_netdev(g_shadow_ndev);
     if (0 != ret) {
